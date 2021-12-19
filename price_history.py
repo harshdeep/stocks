@@ -6,7 +6,8 @@ import numpy
 class PriceHistory:
     def __init__(self) -> None:
         phf = PriceHistoryFetcher(watchlist)
-        self.prices = phf.fetch_incremental()
+        #self.prices = phf.fetch_incremental()
+        self.prices = phf.fetch_stored()
 
     def price(self, date, symbol):
         retries = 0

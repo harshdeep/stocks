@@ -17,7 +17,7 @@ class PriceHistoryFetcher:
     def store(self, data: DataFrame) -> None:
         data.to_csv(self.FILE_NAME)
 
-    def read_stored(self) -> DataFrame:
+    def fetch_stored(self) -> DataFrame:
         stored = pd.read_csv(self.FILE_NAME, index_col='Date')
         stored.index = pd.to_datetime(stored.index)
         return stored
@@ -37,7 +37,7 @@ class PriceHistoryFetcher:
 
     def fetch_incremental(self):
         # fetch current data
-        stored = self.read_stored()
+        stored = self.fetch_stored()
 
         # if it's not outdated, just return it
         last_date_with_data = self.last_date_with_data(stored).date()
