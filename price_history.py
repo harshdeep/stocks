@@ -9,8 +9,13 @@ class PriceHistory:
         self.prices = phf.fetch_incremental()
 
     def price(self, date, symbol):
+        retries = 0
         while date not in self.prices.index or numpy.isnan(self.prices.loc[date, symbol]):
             date = date - timedelta(days=1)
+            retries += 1
+            if retries == 6:
+                print(f"Don't have data for {symbol} in the last 6 days from {date}")
+                return 0
         return self.prices.loc[date, symbol]
 
 

@@ -64,4 +64,4 @@ class PriceHistoryFetcher:
 
 if __name__ == "__main__":
     phf = PriceHistoryFetcher(watchlist)
-    phf.fetch_incremental()
+    phf.fetch_fresh()

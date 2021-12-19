@@ -29,9 +29,8 @@ class CurrentState:
 
         priceHistory = PriceHistory()
 
-        yesterday = datetime.today()
-        yesterday = datetime(year = yesterday.year, month = yesterday.month, day = yesterday.day)# - timedelta(days = 1)
-        print(yesterday)
+        today = datetime.today()
+        today = datetime(year=today.year, month=today.month, day=today.day)
 
         with open('current_state.csv', 'w') as f:
             writer = csv.DictWriter(f, fieldnames=['symbol', 'quantity', 'cost_basis', 'current_value'])
@@ -41,7 +40,7 @@ class CurrentState:
                     'symbol': symbol,
                     'quantity': value['quantity'],
                     'cost_basis': value['cost_basis'],
-                    'current_value': value['quantity'] * priceHistory.price(yesterday, symbol)
+                    'current_value': value['quantity'] * priceHistory.price(today, symbol)
                 })
             print("Done")
 
