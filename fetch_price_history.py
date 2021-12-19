@@ -1,7 +1,7 @@
 from datetime import date, timedelta, datetime
 from pandas.core.frame import DataFrame
 import yfinance as yf
-from watchlist import watchlist
+from watchlist import Watchlist
 import pandas as pd
 import numpy as numpy
 
@@ -63,5 +63,5 @@ class PriceHistoryFetcher:
         return updated
 
 if __name__ == "__main__":
-    phf = PriceHistoryFetcher(watchlist)
+    phf = PriceHistoryFetcher(Watchlist.load())
     phf.fetch_fresh()
