@@ -15,7 +15,7 @@ class Trades:
         with open(self.FILE_NAME) as f:
             reader = csv.DictReader(f)
             for row in reader:
-                date = datetime.strptime(row['Date'], "%m/%d/%Y")
+                date = datetime.strptime(row['Date'], "%m/%d/%y")
                 action = row['Action']
                 symbol = row['Symbol']
                 quantity = float(row['Quantity'])
