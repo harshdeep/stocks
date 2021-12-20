@@ -113,8 +113,9 @@ class CurrentState:
             non_fb_gain = 0
             for symbol, position in current_positions.items():
                 if position['quantity'] == 0:
-                    continue
-                current_value = position['quantity'] * self.priceHistory.price(date, symbol)
+                    current_value = 0
+                else:
+                    current_value = position['quantity'] * self.priceHistory.price(date, symbol)
                 current_gain = current_value - position['cost_basis']
                 value += current_value
                 gain += current_gain
