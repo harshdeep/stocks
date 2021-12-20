@@ -48,7 +48,8 @@ class CurrentState:
         total_non_fb_gain = 0
 
         for symbol, position in currentPositions.items():
-            current_value = position['quantity'] * self.priceHistory.price(today, symbol)
+            current_price = self.priceHistory.price(today, symbol)
+            current_value = position['quantity'] * current_price
             gain = current_value - position['cost_basis']
             result.append({
                 'symbol': symbol,
@@ -56,6 +57,8 @@ class CurrentState:
                 'cost_basis': position['cost_basis'],
                 'current_value': current_value,
                 'gain': gain,
+                'cost_basis_per_share': position['cost_basis'] / position['quantity'] if position['quantity'] != 0 else 0,
+                'current_price_per_share': current_price,
             })
             total_gain += gain
             if symbol != 'FB':
@@ -134,5 +137,5 @@ class CurrentState:
         Utils.writeCSV('timeseries.csv', result)
 
 if __name__ == "__main__":
-    #CurrentState().computeOverall()
-    CurrentState().computeTimeSeries(datetime.fromisoformat('2021-01-01'), Utils.today())
+    CurrentState().computeOverall()
+    #CurrentState().computeTimeSeries(datetime.fromisoformat('2021-01-01'), Utils.today())
