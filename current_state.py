@@ -84,7 +84,10 @@ class CurrentState:
 
         # Reset cost basis on start date
         for symbol, position in current_positions.items():
-            position['cost_basis'] = position['quantity'] * self.priceHistory.price(start_date, symbol)
+            if position['quantity'] == 0:
+                position['cost_basis'] = 0
+            else:
+                position['cost_basis'] = position['quantity'] * self.priceHistory.price(start_date, symbol)
 
         result = []
         cumulative_deposit = 0
