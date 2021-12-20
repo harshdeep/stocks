@@ -1,6 +1,4 @@
 from datetime import datetime, timedelta
-
-from pandas.core.frame import DataFrame
 from price_history import PriceHistory
 from starting_positions import StartingPositions
 from trades import Trades

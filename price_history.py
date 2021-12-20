@@ -1,11 +1,11 @@
 from datetime import date, datetime, timedelta
 from fetch_price_history import PriceHistoryFetcher
-from watchlist import watchlist
+from watchlist import Watchlist
 import numpy
 
 class PriceHistory:
     def __init__(self) -> None:
-        phf = PriceHistoryFetcher(watchlist)
+        phf = PriceHistoryFetcher(Watchlist.load())
         #self.prices = phf.fetch_incremental()
         self.prices = phf.fetch_stored()
 
