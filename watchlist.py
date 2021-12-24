@@ -13,7 +13,7 @@ class Watchlist:
         trades = Trades()
         trades.load()
         for trade in trades.trades:
-            watchlist.add(trade['symbol'])
+            watchlist.add(trade.symbol)
 
         return watchlist
 

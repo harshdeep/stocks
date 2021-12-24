@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from price_history import PriceHistory
 from starting_positions import StartingPositions
-from trades import Trades
+from trades import Trade, Trades
 import csv
 from utils import Utils
 import pandas as pd
@@ -16,19 +16,19 @@ class CurrentState:
 
         self.priceHistory = PriceHistory()
 
-    def applyTrade(self, trade, positions):
-        symbol = trade['symbol']
+    def applyTrade(self, trade: Trade, positions):
+        symbol = trade.symbol
 
         if symbol not in positions:
             positions[symbol] = {'quantity': 0, 'cost_basis': 0, 'start_value': 0, 'start_quantity': 0}
 
-        quantity = trade['quantity']
-        cost_basis = trade['quantity'] * trade['price']
+        quantity = trade.quantity
+        cost_basis = trade.quantity * trade.price
 
-        if trade['action'] == 'Buy' or trade['action'] == 'RSU':
+        if trade.action == 'Buy' or trade.action == 'RSU':
             positions[symbol]['quantity'] += quantity
             positions[symbol]['cost_basis'] += cost_basis
-        elif trade['action'] == 'Sell':
+        elif trade.action == 'Sell':
             if quantity > positions[symbol]['quantity']:
                 print(f"Sold {quantity} {symbol} shares but held only {positions[symbol]['quantity']}")
                 quantity = positions[symbol]['quantity']
@@ -70,7 +70,7 @@ class CurrentState:
 
     def computeTimeSeries(self, start_date, end_date):
         current_positions = self.startingPositions.positions.copy()
-        date = self.trades.trades[0]['date']
+        date = self.trades.trades[0].date
         assert(date < start_date)
         assert(start_date < end_date)
 
@@ -78,7 +78,7 @@ class CurrentState:
 
         # Run up to the start date
         while date < start_date:
-            for trade in [t for t in self.trades.trades if t['date'] == date]:
+            for trade in [t for t in self.trades.trades if t.date == date]:
                 self.applyTrade(trade, current_positions)
             date += day
 
@@ -99,16 +99,16 @@ class CurrentState:
             deposit = 0
             withdrawn = 0
 
-            for trade in [t for t in self.trades.trades if t['date'] == date]:
+            for trade in [t for t in self.trades.trades if t.date == date]:
                 self.applyTrade(trade, current_positions)
-                symbol = trade['symbol']
-                trade_value = trade['quantity'] * trade['price']
+                symbol = trade.symbol
+                trade_value = trade.quantity * trade.price
                 if symbol not in traded_value_by_symbol:
                     traded_value_by_symbol[symbol] = {'bought': 0, 'sold': 0}
-                if trade['action'] == 'Buy':
+                if trade.action == 'Buy':
                     deposit += trade_value
                     traded_value_by_symbol[symbol]['bought'] += trade_value
-                elif trade['action'] == 'Sell' and trade['symbol'] != 'FB':
+                elif trade.action == 'Sell' and trade.symbol != 'FB':
                     withdrawn += trade_value
                     traded_value_by_symbol[symbol]['sold'] += trade_value
 

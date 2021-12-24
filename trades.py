@@ -1,11 +1,21 @@
 import csv
 from datetime import datetime
+from dataclasses import dataclass
+from typing import List
+
+@dataclass
+class Trade:
+    date: datetime
+    action: str
+    symbol: str
+    quantity: float
+    price: float
 
 class Trades:
     FILE_NAME = 'trades.csv'
 
     def __init__(self) -> None:
-        self.trades = []
+        self.trades: List[Trade] = []
 
     def load(self):
         if self.trades:
@@ -21,15 +31,15 @@ class Trades:
                 quantity = float(row['Quantity'])
                 price = float(row['Price'])
                 # ignoring account for now
-                trade = {
-                    'date': date,
-                    'action': action,
-                    'symbol': symbol,
-                    'quantity': quantity,
-                    'price': price,
-                }
+                trade = Trade(
+                    date,
+                    action,
+                    symbol,
+                    quantity,
+                    price
+                )
                 self.trades.append(trade)
-        self.trades.sort(key = lambda trade:trade['date'])
+        self.trades.sort(key = lambda trade:trade.date)
 
 if __name__ == "__main__":
     t = Trades()
