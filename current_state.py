@@ -20,7 +20,7 @@ class CurrentState:
         symbol = trade['symbol']
 
         if symbol not in positions:
-            positions[symbol] = {'quantity': 0, 'cost_basis': 0}
+            positions[symbol] = {'quantity': 0, 'cost_basis': 0, 'start_value': 0, 'start_quantity': 0}
 
         quantity = trade['quantity']
         cost_basis = trade['quantity'] * trade['price']
@@ -84,14 +84,15 @@ class CurrentState:
 
         # Reset cost basis on start date
         for symbol, position in current_positions.items():
-            if position['quantity'] == 0:
-                position['cost_basis'] = 0
-            else:
-                position['cost_basis'] = position['quantity'] * self.priceHistory.price(start_date, symbol)
+            position['cost_basis'] = self.priceHistory.positionValue(start_date, symbol, position['quantity'])
+            position['start_value'] = position['cost_basis']
+            position['start_quantity'] = position['quantity']
 
         result = []
         cumulative_deposit = 0
         cumulative_withdrawn = 0
+
+        traded_value_by_symbol = {}
 
         while date <= end_date:
             # apply trades from this day
@@ -100,12 +101,16 @@ class CurrentState:
 
             for trade in [t for t in self.trades.trades if t['date'] == date]:
                 self.applyTrade(trade, current_positions)
-
+                symbol = trade['symbol']
                 trade_value = trade['quantity'] * trade['price']
+                if symbol not in traded_value_by_symbol:
+                    traded_value_by_symbol[symbol] = {'bought': 0, 'sold': 0}
                 if trade['action'] == 'Buy':
                     deposit += trade_value
+                    traded_value_by_symbol[symbol]['bought'] += trade_value
                 elif trade['action'] == 'Sell' and trade['symbol'] != 'FB':
                     withdrawn += trade_value
+                    traded_value_by_symbol[symbol]['sold'] += trade_value
 
             cumulative_deposit += deposit
             cumulative_withdrawn += withdrawn
@@ -115,10 +120,7 @@ class CurrentState:
             non_fb_value = 0
             non_fb_gain = 0
             for symbol, position in current_positions.items():
-                if position['quantity'] == 0:
-                    current_value = 0
-                else:
-                    current_value = position['quantity'] * self.priceHistory.price(date, symbol)
+                current_value = self.priceHistory.positionValue(date, symbol, position['quantity'])
                 current_gain = current_value - position['cost_basis']
                 value += current_value
                 gain += current_gain
@@ -128,8 +130,8 @@ class CurrentState:
 
             result.append({
                 'date': date,
-                'value': value,
-                'gain': gain,
+                'total_value': value,
+                'total_gain': gain,
                 'non_fb_value': non_fb_value,
                 'non_fb_gain': non_fb_gain,
                 'deposit': deposit,
@@ -140,6 +142,30 @@ class CurrentState:
 
         Utils.writeCSV('timeseries.csv', result)
 
+        final_positions = []
+        for symbol, position in current_positions.items():
+            value = self.priceHistory.positionValue(end_date, symbol, position['quantity'])
+            gain = value - position['cost_basis']
+            traded_value = traded_value_by_symbol[symbol] if symbol in traded_value_by_symbol else {'bought': 0, 'sold': 0}
+            net_final_value = value + traded_value['sold'] - traded_value['bought']
+            net_gain = net_final_value - position['start_value']
+            if position['start_quantity'] == 0 and position['quantity'] == 0 and traded_value['bought'] == 0:
+                continue
+            final_positions.append({
+                'symbol': symbol,
+                'start_value': position['start_value'],
+                'start_quantity': position['start_quantity'],
+                'value': value,
+                'quantity': position['quantity'],
+                'gain': gain,
+                'gain_on_current_value': 0 if value == 0 else gain / value,
+                'bought': traded_value['bought'],
+                'sold': traded_value['sold'],
+                'gain_on_start_value': 0 if position['start_value'] == 0 else net_gain / position['start_value'],
+            })
+        
+        Utils.writeCSV(f'Stocks {start_date.strftime("%Y:%m:%d")} - {end_date.strftime("%Y:%m:%d")}.csv', final_positions)
+
 if __name__ == "__main__":
-    CurrentState().computeOverall()
-    #CurrentState().computeTimeSeries(datetime.fromisoformat('2021-01-01'), Utils.today())
+    #CurrentState().computeOverall()
+    CurrentState().computeTimeSeries(datetime.fromisoformat('2021-01-01'), Utils.today())

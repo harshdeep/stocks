@@ -15,6 +15,7 @@ class PriceHistoryFetcher:
         return yf.download(self.symbolStr, start=start_date)["Adj Close"]
 
     def store(self, data: DataFrame) -> None:
+        data.sort_index()
         data.to_csv(self.FILE_NAME)
 
     def fetch_stored(self) -> DataFrame:
@@ -24,7 +25,7 @@ class PriceHistoryFetcher:
 
     def fetch_fresh(self):
         data = self.download("2019-01-01")
-        data.to_csv(self.FILE_NAME)
+        self.store(data)
         return data
 
     def last_date_with_data(self, data: DataFrame) -> date:

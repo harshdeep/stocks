@@ -19,6 +19,10 @@ class PriceHistory:
                 return 0
         return self.prices.loc[date, symbol]
 
+    def positionValue(self, date, symbol, quantity):
+        if quantity == 0:
+            return 0
+        return quantity * self.price(date, symbol)
 
 if __name__ == "__main__":
     p = PriceHistory()
