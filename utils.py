@@ -9,8 +9,7 @@ class Utils:
         with open(filename, 'w') as f:
             writer = csv.DictWriter(f, fieldnames = rows[0].keys())
             writer.writeheader()
-            for row in rows:
-                writer.writerow(row)
+            writer.writerows(rows)
     
     def today() -> datetime:
         today = datetime.today()
