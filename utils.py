@@ -14,3 +14,6 @@ class Utils:
     def today() -> datetime:
         today = datetime.today()
         return datetime(year=today.year, month=today.month, day=today.day)
+
+    def dateToStr(date: datetime) -> str:
+        return date.date().isoformat()

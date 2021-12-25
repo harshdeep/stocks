@@ -1,13 +1,14 @@
 from datetime import date, datetime, timedelta
 from fetch_price_history import PriceHistoryFetcher
+from starting_positions import Position
 from watchlist import Watchlist
 import numpy
 
 class PriceHistory:
     def __init__(self) -> None:
         phf = PriceHistoryFetcher(Watchlist.load())
-        #self.prices = phf.fetch_incremental()
-        self.prices = phf.fetch_stored()
+        self.prices = phf.fetch_incremental()
+        #self.prices = phf.fetch_stored()
 
     def price(self, date, symbol):
         retries = 0
@@ -19,10 +20,10 @@ class PriceHistory:
                 return 0
         return self.prices.loc[date, symbol]
 
-    def positionValue(self, date, symbol, quantity):
-        if quantity == 0:
+    def positionValue(self, date: datetime, position: Position):
+        if position.quantity == 0:
             return 0
-        return quantity * self.price(date, symbol)
+        return position.quantity * self.price(date, position.symbol)
 
 if __name__ == "__main__":
     p = PriceHistory()
