@@ -155,12 +155,6 @@ class CurrentState:
         non_fb_gain = [r['non_fb_gain'] for r in result]
         non_fb_value = [r['non_fb_value'] for r in result]
         net_non_fb_value = [r['net_non_fb_value'] for r in result]
-        qqq = self.priceHistory.priceHistory('QQQ', start_date, end_date)
-        i=0
-        while np.isnan(qqq[i]):
-            i+=1
-        multiplier = non_fb_value[i] / qqq[i]
-        qqq = [multiplier * v for v in qqq]
 
         plt.plot(dates, non_fb_gain, label='Gain')
         plt.plot(dates, non_fb_value, label='Value')
