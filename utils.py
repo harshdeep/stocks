@@ -2,8 +2,11 @@ import csv
 from datetime import datetime
 
 class Utils:
+    def currency(value):
+        return f'${value:,.0f}'.replace('$-', '-$')
+
     def print_currency(context, value):
-        print(f'{context}: ${value:,.0f}'.replace('$-', '-$'))
+        print(f'{context}: {Utils.currency(value)}')
 
     def writeCSV(filename, rows):
         with open(filename, 'w') as f:

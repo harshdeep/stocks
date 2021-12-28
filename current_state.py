@@ -2,10 +2,10 @@ from datetime import datetime, timedelta
 from price_history import PriceHistory
 from starting_positions import Position, StartingPositions
 from trades import Trade, Trades
-import csv
 from utils import Utils
-import pandas as pd
 from typing import Dict
+from matplotlib import pyplot as plt
+import numpy as np
 
 class CurrentState:
     def __init__(self) -> None:
@@ -139,6 +139,57 @@ class CurrentState:
                 'net_non_fb_value': non_fb_value - cumulative_deposit + cumulative_withdrawn
             })
             date += day
+
+        plt.xlabel('Date')
+        plt.ylabel('$')
+        
+        dates = [r['date'] for r in result]
+        non_fb_gain = [r['non_fb_gain'] for r in result]
+        non_fb_value = [r['non_fb_value'] for r in result]
+        plt.plot(dates, non_fb_gain, label='Gain')
+        plt.plot(dates, non_fb_value, label='Value')
+
+        min_index = np.argmin(non_fb_gain)
+        plt.annotate(
+            Utils.currency(non_fb_gain[min_index]),
+            (dates[min_index], non_fb_gain[min_index]),
+            color='red'
+        )
+
+        max_index = np.argmax(non_fb_gain)
+        plt.annotate(
+            Utils.currency(non_fb_gain[max_index]),
+            (dates[max_index], non_fb_gain[max_index]),
+            color='green'
+        )
+
+        min_index = np.argmin(non_fb_value)
+        plt.annotate(
+            Utils.currency(non_fb_value[min_index]),
+            (dates[min_index], non_fb_value[min_index]),
+            color='red'
+        )
+
+        max_index = np.argmax(non_fb_value)
+        plt.annotate(
+            Utils.currency(non_fb_value[max_index]),
+            (dates[max_index], non_fb_value[max_index]),
+            color='green'
+        )
+
+        plt.annotate(
+            Utils.currency(non_fb_gain[-1]),
+            (dates[-1], non_fb_gain[-1]),
+            color='black'
+        )
+
+        plt.annotate(
+            Utils.currency(non_fb_value[-1]),
+            (dates[-1], non_fb_value[-1]),
+            color='black'
+        )
+
+        plt.show()
 
         date_range_str = f'{Utils.dateToStr(start_date)} to {Utils.dateToStr(end_date)}'
         Utils.writeCSV(f'Timeseries {date_range_str}.csv', result)
