@@ -54,6 +54,10 @@ coverage.xml
 # Data
 *.csv
 *.xlsx
+*.png
+
+# Email config
+email_config.py
 
 # Translations
 *.mo
