@@ -69,6 +69,14 @@ class CurrentState:
         Utils.print_currency('Overall gain', total_gain)
         Utils.print_currency('Non-FB gain', total_non_fb_gain)
 
+    def stockPriceHistoryToPlot(self, symbol: str, start_date: datetime, end_date: datetime, scale_to: float):
+        series = self.priceHistory.priceHistory(symbol, start_date, end_date)
+        i=0
+        while np.isnan(series[i]):
+            i+=1
+        multiplier = scale_to / series[i]
+        return [multiplier * v for v in series]
+
     def computeTimeSeries(self, start_date, end_date):
         current_positions = self.startingPositions.positions.copy()
         date = self.trades.trades[0].date
@@ -146,8 +154,19 @@ class CurrentState:
         dates = [r['date'] for r in result]
         non_fb_gain = [r['non_fb_gain'] for r in result]
         non_fb_value = [r['non_fb_value'] for r in result]
+        net_non_fb_value = [r['net_non_fb_value'] for r in result]
+        qqq = self.priceHistory.priceHistory('QQQ', start_date, end_date)
+        i=0
+        while np.isnan(qqq[i]):
+            i+=1
+        multiplier = non_fb_value[i] / qqq[i]
+        qqq = [multiplier * v for v in qqq]
+
         plt.plot(dates, non_fb_gain, label='Gain')
         plt.plot(dates, non_fb_value, label='Value')
+        plt.plot(dates, net_non_fb_value, label='Net value')
+        plt.plot(dates, self.stockPriceHistoryToPlot('QQQ', start_date, end_date, non_fb_value[0]), label = 'QQQ')
+        plt.plot(dates, self.stockPriceHistoryToPlot('VTI', start_date, end_date, non_fb_value[0]), label = 'VTI')
 
         min_index = np.argmin(non_fb_gain)
         plt.annotate(
@@ -189,6 +208,7 @@ class CurrentState:
             color='black'
         )
 
+        plt.legend()
         plt.show()
 
         date_range_str = f'{Utils.dateToStr(start_date)} to {Utils.dateToStr(end_date)}'
@@ -220,5 +240,5 @@ class CurrentState:
         Utils.writeCSV(f'Stocks {date_range_str}.csv', final_positions)
 
 if __name__ == "__main__":
-    CurrentState().computeOverall()
+    #CurrentState().computeOverall()
     CurrentState().computeTimeSeries(datetime.fromisoformat('2021-01-01'), Utils.today())

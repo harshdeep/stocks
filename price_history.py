@@ -16,7 +16,7 @@ class PriceHistory:
             date = date - timedelta(days=1)
             retries += 1
             if retries == 6:
-                print(f"Don't have data for {symbol} in the last 6 days from {date}")
+                #print(f"Don't have data for {symbol} in the last 6 days from {date}")
                 return 0
         return self.prices.loc[date, symbol]
 
@@ -24,6 +24,10 @@ class PriceHistory:
         if position.quantity == 0:
             return 0
         return position.quantity * self.price(date, position.symbol)
+
+    def priceHistory(self, symbol: str, start_date: datetime, end_date: datetime):
+        df = self.prices.loc[start_date:end_date, symbol].ffill()
+        return df.values.tolist()
 
 if __name__ == "__main__":
     p = PriceHistory()
