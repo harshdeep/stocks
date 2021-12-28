@@ -1,9 +1,10 @@
 from datetime import datetime, timedelta
 from price_history import PriceHistory
+from send_email import EmailSender
 from starting_positions import Position, StartingPositions
 from trades import Trade, Trades
 from utils import Utils
-from typing import Dict
+from typing import List, Dict
 from matplotlib import pyplot as plt
 from matplotlib import ticker as tick
 import numpy as np
@@ -178,42 +179,79 @@ class CurrentState:
         Utils.writeCSV(f'Stocks {date_range_str}.csv', final_positions)
         return(aggregate_perf, final_positions)
 
-    def printFinalPositionSummary(self, final_positions):
+    def finalPositionSummary(self, final_positions):
+        summary = {}
         sorted_by_gain = sorted(final_positions, key=lambda x: x['gain'])
-        biggest_losers = sorted_by_gain[:5]
-        biggest_winners = list(reversed(sorted_by_gain[-5:]))
-
-        print("\nBiggest winners by dollar amount")
-        for s in biggest_winners:
-            print(f"{s['symbol']}\t{Utils.currency(s['gain'])}")
-        
-        print("\nBiggest losers by dollar amount")
-        for s in biggest_losers:
-            print(f"{s['symbol']}\t{Utils.currency(s['gain'])}")
+        summary['absolute_gain'] = {
+            'losers': sorted_by_gain[:5],
+            'winners': list(reversed(sorted_by_gain[-5:])),
+        }
 
         sorted_by_percent_gain = sorted(final_positions, key=lambda x: x['gain_on_start_value'])
-        biggest_losers = sorted_by_percent_gain[:5]
-        biggest_winners = list(reversed(sorted_by_percent_gain[-5:]))
+        summary['percent_gain'] = {
+            'losers': sorted_by_percent_gain[:5],
+            'winners': list(reversed(sorted_by_percent_gain[-5:])),
+        }
 
-        print("\nBiggest winners by %")
-        for s in biggest_winners:
-            print(f"{s['symbol']}\t{s['gain_on_start_value']*100:.2f}%")
+        summary['bought'] = sorted(list(filter(lambda x: x['bought'] != 0, final_positions)), key=lambda x: x['bought'], reverse=True)
+        summary['sold'] = sorted(list(filter(lambda x: x['sold'] != 0, final_positions)), key=lambda x: x['sold'], reverse=True)
+        return summary
+
+    def finalPositionSummaryMarkdown(self, summary, start_date, end_date):
+        absolute_gain_strings = {}
+        for key, positions in summary['absolute_gain'].items():
+            absolute_gain_strings[key] = ''
+            for position in positions:
+                absolute_gain_strings[key] += f"| {position['symbol']} | {Utils.currency(position['gain'])} | \n"
+
+        percent_gain_strings = {}
+        for key, positions in summary['percent_gain'].items():
+            percent_gain_strings[key] = ''
+            for position in positions:
+                percent_gain_strings[key] += f"| {position['symbol']} | {position['gain_on_start_value'] * 100:.0f}% | \n"
+
+        transaction_strings = {}
+        for transaction in ['bought', 'sold']:
+            transaction_strings[transaction] = ''
+            for position in summary[transaction]:
+                transaction_strings[transaction] += f"| {position['symbol']} | {Utils.currency(position[transaction])} | \n"
         
-        print("\nBiggest losers by %")
-        for s in biggest_losers:
-            print(f"{s['symbol']}\t{s['gain_on_start_value']*100:.2f}%")
+        text = f"""
+## Summary from {Utils.dateRangeStr(start_date, end_date)}
 
-        sorted_by_bought_amount = sorted(list(filter(lambda x: x['bought'] != 0, final_positions)), key=lambda x: x['bought'], reverse=True)
-        print("\nBought:")
-        for s in sorted_by_bought_amount:
-            print(f"{s['symbol']}: {Utils.currency(s['bought'])}")
+### Biggest winners
+| Symbol | Delta |
+| ---    | ---  |
+{absolute_gain_strings['winners']}
 
-        sorted_by_sold_amount = sorted(list(filter(lambda x: x['sold'] != 0, final_positions)), key=lambda x: x['sold'], reverse=True)
-        print("\nSold:")
-        for s in sorted_by_sold_amount:
-            print(f"{s['symbol']}: {Utils.currency(s['sold'])}")
+### Biggest losers
+| Symbol | Delta |
+| ---    | ---  |
+{absolute_gain_strings['losers']}
 
-    def renderAggregatePerfChart(self, aggregate_perf, start_date, end_date):
+### Biggest winners by percent
+| Symbol | Delta |
+| ---    | ---  |
+{percent_gain_strings['winners']}
+
+### Biggest losers by percent
+| Symbol | Delta |
+| ---    | ---  |
+{percent_gain_strings['losers']}
+
+### Bought
+| Symbol | Amount |
+| ---    | ---  |
+{transaction_strings['bought']}
+
+### Sold
+| Symbol | Amount |
+| ---    | ---  |
+{transaction_strings['sold']}
+        """
+        return text
+
+    def renderAggregatePerfChart(self, aggregate_perf: List[Dict], start_date: datetime, end_date: datetime) -> str:
         fig, (ax1, ax2, ax3) = plt.subplots(3, 1)
 
         fig.set_size_inches(20, 15)
@@ -288,28 +326,31 @@ class CurrentState:
         filename = f'Plot {Utils.dateRangeStr(start_date, end_date)}.png'
         plt.savefig(filename)
         print(f'\nWrote {filename}')
+        return filename
 
     def monthlySummary(self):
         end_date = Utils.today()
         start_date = end_date - timedelta(days=30)
-        self.summary(start_date, end_date)
+        return self.summary(start_date, end_date)
 
     def ytdSummary(self):
         end_date = Utils.today()
         start_date = datetime(year = end_date.year, month = 1, day = 1)
-        self.summary(start_date, end_date)
+        return self.summary(start_date, end_date)
 
     def summary(self, start_date, end_date):
         (aggregate_perf, final_positions) = self.computeTimeSeries(start_date, end_date)
-        self.renderAggregatePerfChart(aggregate_perf, start_date, end_date)
-        self.printFinalPositionSummary(final_positions)
-
+        filename = self.renderAggregatePerfChart(aggregate_perf, start_date, end_date)
+        summary = self.finalPositionSummary(final_positions)
+        markdownStr = self.finalPositionSummaryMarkdown(summary, start_date, end_date)
+        return (markdownStr, filename)
 
 if __name__ == "__main__":
     #CurrentState().computeOverall()
 
     print("Monthly Summary")
-    CurrentState().monthlySummary()
+    text, img_filename = CurrentState().monthlySummary()
+    EmailSender.sendMarkdown("Monthly investment summary", text, [img_filename])
 
-    print("YTD summary")
-    CurrentState().ytdSummary()
+    #print("YTD summary")
+    #CurrentState().ytdSummary()
