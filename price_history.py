@@ -27,6 +27,11 @@ class PriceHistory:
 
     def priceHistory(self, symbol: str, start_date: datetime, end_date: datetime):
         df = self.prices.loc[start_date:end_date, symbol].ffill()
+        last_value = df[-1]
+        date = df.index[-1]
+        while date < end_date:
+            date += timedelta(days=1)
+            df[date] = last_value
         return df.values.tolist()
 
 if __name__ == "__main__":

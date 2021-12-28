@@ -5,6 +5,7 @@ from trades import Trade, Trades
 from utils import Utils
 from typing import Dict
 from matplotlib import pyplot as plt
+from matplotlib import ticker as tick
 import numpy as np
 
 class CurrentState:
@@ -96,7 +97,7 @@ class CurrentState:
             position.costBasis = self.priceHistory.positionValue(start_date, position)
             position.resetStartValue()
 
-        result = []
+        aggregate_perf = []
         cumulative_deposit = 0
         cumulative_withdrawn = 0
 
@@ -136,7 +137,7 @@ class CurrentState:
                     non_fb_value += current_value
                     non_fb_gain += current_gain
 
-            result.append({
+            aggregate_perf.append({
                 'date': date,
                 'total_value': value,
                 'total_gain': gain,
@@ -148,65 +149,8 @@ class CurrentState:
             })
             date += day
 
-        plt.xlabel('Date')
-        plt.ylabel('$')
-        
-        dates = [r['date'] for r in result]
-        non_fb_gain = [r['non_fb_gain'] for r in result]
-        non_fb_value = [r['non_fb_value'] for r in result]
-        net_non_fb_value = [r['net_non_fb_value'] for r in result]
-
-        plt.plot(dates, non_fb_gain, label='Gain')
-        plt.plot(dates, non_fb_value, label='Value')
-        plt.plot(dates, net_non_fb_value, label='Net value')
-        plt.plot(dates, self.stockPriceHistoryToPlot('QQQ', start_date, end_date, non_fb_value[0]), label = 'QQQ')
-        plt.plot(dates, self.stockPriceHistoryToPlot('VTI', start_date, end_date, non_fb_value[0]), label = 'VTI')
-
-        min_index = np.argmin(non_fb_gain)
-        plt.annotate(
-            Utils.currency(non_fb_gain[min_index]),
-            (dates[min_index], non_fb_gain[min_index]),
-            color='red'
-        )
-
-        max_index = np.argmax(non_fb_gain)
-        plt.annotate(
-            Utils.currency(non_fb_gain[max_index]),
-            (dates[max_index], non_fb_gain[max_index]),
-            color='green'
-        )
-
-        min_index = np.argmin(non_fb_value)
-        plt.annotate(
-            Utils.currency(non_fb_value[min_index]),
-            (dates[min_index], non_fb_value[min_index]),
-            color='red'
-        )
-
-        max_index = np.argmax(non_fb_value)
-        plt.annotate(
-            Utils.currency(non_fb_value[max_index]),
-            (dates[max_index], non_fb_value[max_index]),
-            color='green'
-        )
-
-        plt.annotate(
-            Utils.currency(non_fb_gain[-1]),
-            (dates[-1], non_fb_gain[-1]),
-            color='black'
-        )
-
-        plt.annotate(
-            Utils.currency(non_fb_value[-1]),
-            (dates[-1], non_fb_value[-1]),
-            color='black'
-        )
-
-        plt.legend()
-        plt.show()
-
-        date_range_str = f'{Utils.dateToStr(start_date)} to {Utils.dateToStr(end_date)}'
-        Utils.writeCSV(f'Timeseries {date_range_str}.csv', result)
+        date_range_str = Utils.dateRangeStr(start_date, end_date)
+        Utils.writeCSV(f'Timeseries {date_range_str}.csv', aggregate_perf)
 
         final_positions = []
         for position in current_positions.values():
@@ -232,7 +176,140 @@ class CurrentState:
             })
         
         Utils.writeCSV(f'Stocks {date_range_str}.csv', final_positions)
+        return(aggregate_perf, final_positions)
+
+    def printFinalPositionSummary(self, final_positions):
+        sorted_by_gain = sorted(final_positions, key=lambda x: x['gain'])
+        biggest_losers = sorted_by_gain[:5]
+        biggest_winners = list(reversed(sorted_by_gain[-5:]))
+
+        print("\nBiggest winners by dollar amount")
+        for s in biggest_winners:
+            print(f"{s['symbol']}\t{Utils.currency(s['gain'])}")
+        
+        print("\nBiggest losers by dollar amount")
+        for s in biggest_losers:
+            print(f"{s['symbol']}\t{Utils.currency(s['gain'])}")
+
+        sorted_by_percent_gain = sorted(final_positions, key=lambda x: x['gain_on_start_value'])
+        biggest_losers = sorted_by_percent_gain[:5]
+        biggest_winners = list(reversed(sorted_by_percent_gain[-5:]))
+
+        print("\nBiggest winners by %")
+        for s in biggest_winners:
+            print(f"{s['symbol']}\t{s['gain_on_start_value']*100:.2f}%")
+        
+        print("\nBiggest losers by %")
+        for s in biggest_losers:
+            print(f"{s['symbol']}\t{s['gain_on_start_value']*100:.2f}%")
+
+        sorted_by_bought_amount = sorted(list(filter(lambda x: x['bought'] != 0, final_positions)), key=lambda x: x['bought'], reverse=True)
+        print("\nBought:")
+        for s in sorted_by_bought_amount:
+            print(f"{s['symbol']}: {Utils.currency(s['bought'])}")
+
+        sorted_by_sold_amount = sorted(list(filter(lambda x: x['sold'] != 0, final_positions)), key=lambda x: x['sold'], reverse=True)
+        print("\nSold:")
+        for s in sorted_by_sold_amount:
+            print(f"{s['symbol']}: {Utils.currency(s['sold'])}")
+
+    def renderAggregatePerfChart(self, aggregate_perf, start_date, end_date):
+        fig, (ax1, ax2, ax3) = plt.subplots(3, 1)
+
+        fig.set_size_inches(20, 15)
+        fig.set_dpi(100)
+
+        ax1.set_xlabel('Date')
+        ax1.set_ylabel('Value')
+        ax1.grid()
+
+        ax1.get_yaxis().set_major_formatter(tick.FuncFormatter(lambda x, _: Utils.currency(x)))
+        
+        dates = [r['date'] for r in aggregate_perf]
+
+        non_fb_value = [r['non_fb_value'] for r in aggregate_perf]
+        net_non_fb_value = [r['net_non_fb_value'] for r in aggregate_perf]
+
+        ax1.plot(dates, non_fb_value, label='Value')
+        ax1.plot(dates, net_non_fb_value, label='Net value')
+        ax1.plot(dates, self.stockPriceHistoryToPlot('VTI', start_date, end_date, non_fb_value[0]), label = 'VTI')
+
+        min_index = np.argmin(non_fb_value)
+        ax1.annotate(
+            Utils.currency(non_fb_value[min_index]),
+            (dates[min_index], non_fb_value[min_index]),
+            color='red'
+        )
+
+        max_index = np.argmax(non_fb_value)
+        ax1.annotate(
+            Utils.currency(non_fb_value[max_index]),
+            (dates[max_index], non_fb_value[max_index]),
+            color='green'
+        )
+
+        ax1.annotate(
+            Utils.currency(non_fb_value[-1]),
+            (dates[-1], non_fb_value[-1]),
+            color='black'
+        )
+
+        ax2.set_ylabel('Gain')
+        ax2.get_yaxis().set_major_formatter(tick.FuncFormatter(lambda x, _: Utils.currency(x)))
+        ax2.grid()
+        non_fb_gain = [r['non_fb_gain'] for r in aggregate_perf]
+        ax2.plot(dates, non_fb_gain, label='Gain')
+        min_index = np.argmin(non_fb_gain)
+        ax2.annotate(
+            Utils.currency(non_fb_gain[min_index]),
+            (dates[min_index], non_fb_gain[min_index]),
+            color='red'
+        )
+
+        max_index = np.argmax(non_fb_gain)
+        ax2.annotate(
+            Utils.currency(non_fb_gain[max_index]),
+            (dates[max_index], non_fb_gain[max_index]),
+            color='green'
+        )
+
+        ax2.annotate(
+            Utils.currency(non_fb_gain[-1]),
+            (dates[-1], non_fb_gain[-1]),
+            color='black'
+        )
+
+        ax3.bar(dates, [r['deposit'] for r in aggregate_perf], color='blue')
+        ax3.bar(dates, [-1*r['withdrawn'] for r in aggregate_perf], color='red')
+        ax3.set_ylabel('Transactions')
+        ax3.grid()
+
+        ax1.legend()
+        filename = f'Plot {Utils.dateRangeStr(start_date, end_date)}.png'
+        plt.savefig(filename)
+        print(f'\nWrote {filename}')
+
+    def monthlySummary(self):
+        end_date = Utils.today()
+        start_date = end_date - timedelta(days=30)
+        self.summary(start_date, end_date)
+
+    def ytdSummary(self):
+        end_date = Utils.today()
+        start_date = datetime(year = end_date.year, month = 1, day = 1)
+        self.summary(start_date, end_date)
+
+    def summary(self, start_date, end_date):
+        (aggregate_perf, final_positions) = self.computeTimeSeries(start_date, end_date)
+        self.renderAggregatePerfChart(aggregate_perf, start_date, end_date)
+        self.printFinalPositionSummary(final_positions)
+
 
 if __name__ == "__main__":
     #CurrentState().computeOverall()
-    CurrentState().computeTimeSeries(datetime.fromisoformat('2021-01-01'), Utils.today())
+
+    print("Monthly Summary")
+    CurrentState().monthlySummary()
+
+    print("YTD summary")
+    CurrentState().ytdSummary()

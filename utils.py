@@ -20,3 +20,6 @@ class Utils:
 
     def dateToStr(date: datetime) -> str:
         return date.date().isoformat()
+    
+    def dateRangeStr(start_date: datetime, end_date: datetime) -> str:
+        return f'{Utils.dateToStr(start_date)} to {Utils.dateToStr(end_date)}'
