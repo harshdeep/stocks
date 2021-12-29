@@ -4,6 +4,7 @@ import yfinance as yf
 from watchlist import Watchlist
 import pandas as pd
 import numpy as numpy
+import argparse
 
 class PriceHistoryFetcher:
     FILE_NAME = "prices.csv"
@@ -64,5 +65,13 @@ class PriceHistoryFetcher:
         return updated
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument('method', choices=['fresh', 'incremental'])
+    args = parser.parse_args()
+
     phf = PriceHistoryFetcher(Watchlist.load())
-    phf.fetch_fresh()
+
+    if args.method == 'incremental':
+        phf.fetch_incremental()
+    else:
+        phf.fetch_fresh()

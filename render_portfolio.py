@@ -37,6 +37,9 @@ class RenderPortfolio:
     def lastMonth(self):
         self.lastNDays(30)
 
+    def lastQuarter(self):
+        self.lastNDays(90)
+
     def lastYear(self):
         self.lastNDays(365)
 
@@ -206,7 +209,7 @@ class RenderPortfolio:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('period', choices=['week', 'month', 'quarter', 'year', 'ytd'])
+    parser.add_argument('period', choices=['week', 'month', 'quarter', 'year', 'ytd', 'test'])
     args = parser.parse_args()
     rp = RenderPortfolio()
 
@@ -221,3 +224,5 @@ if __name__ == "__main__":
         rp.lastYear()
     elif period == 'ytd':
         rp.ytd()
+    elif period == 'test':
+        print("Test 123\n")
