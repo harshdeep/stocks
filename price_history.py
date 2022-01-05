@@ -23,7 +23,10 @@ class PriceHistory:
     def positionValue(self, date: datetime, position: Position):
         if position.quantity == 0:
             return 0
-        return position.quantity * self.price(date, position.symbol)
+        price = self.price(date, position.symbol)
+        if price == 0:
+            return position.costBasis
+        return position.quantity * price
 
     def priceHistory(self, symbol: str, start_date: datetime, end_date: datetime):
         df = self.prices.loc[start_date:end_date, symbol].ffill()
