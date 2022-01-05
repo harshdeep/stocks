@@ -9,8 +9,9 @@ import numpy as np
 from send_email import EmailSender
 
 class RenderPortfolio:
-    def __init__(self) -> None:
+    def __init__(self, dest: str) -> None:
         self.portfolio = Portfolio()
+        self.dest = dest
 
     def timeseries(self, start_date: datetime, end_date: datetime):
         (aggregate_perf, final_positions) = self.portfolio.timeSeries(start_date, end_date)
@@ -24,7 +25,12 @@ class RenderPortfolio:
         summary = self.finalPositionSummary(final_positions)
         summaryMarkdown = self.finalPositionSummaryMarkdown(summary, start_date, end_date)
 
-        EmailSender.sendMarkdown(f'Investment summary {date_range_str}', summaryMarkdown, [chart_filename])
+        if self.dest == "console":
+            print(summaryMarkdown)
+        elif self.dest == "email":
+            EmailSender.sendMarkdown(f'Investment summary {date_range_str}', summaryMarkdown, [chart_filename])
+        else:
+            raise Exception(f'Unknown dest {self.dest}')
 
     def lastNDays(self, n:int):
         end_date = Utils.today()
@@ -210,8 +216,9 @@ class RenderPortfolio:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('period', choices=['week', 'month', 'quarter', 'year', 'ytd', 'test'])
+    parser.add_argument('-d', '--dest', choices=['console', 'email'], default='console')
     args = parser.parse_args()
-    rp = RenderPortfolio()
+    rp = RenderPortfolio(args.dest)
 
     period = args.period
     if period == 'week':

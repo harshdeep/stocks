@@ -10,7 +10,9 @@
     <array>
         <string>/Users/harshdeep/dev/stocks/env/bin/python</string>
         <string>/Users/harshdeep/dev/stocks/render_portfolio.py</string>
-	<string>week</string>
+	<string>month</string>
+	<string>-d</string>
+	<string>email</string>
     </array>
     <key>StartCalendarInterval</key>
     <dict>
@@ -18,8 +20,6 @@
         <integer>0</integer>
         <key>Hour</key>
         <integer>5</integer>
-        <key>Weekday</key>
-        <integer>3</integer>
     </dict>
     <key>StandardOutPath</key>
     <string>/Users/harshdeep/dev/stocks/std_out.log</string>
