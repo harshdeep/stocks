@@ -17,10 +17,10 @@ class Trades:
     def __init__(self) -> None:
         self.trades: List[Trade] = []
 
-    def load(self):
+    def load(self) -> List[Trade]:
         if self.trades:
             print("Trades data has already been loaded")
-            return
+            return self.trades
         
         with open(self.FILE_NAME) as f:
             reader = csv.DictReader(f)
@@ -40,6 +40,7 @@ class Trades:
                 )
                 self.trades.append(trade)
         self.trades.sort(key = lambda trade:trade.date)
+        return self.trades
 
 if __name__ == "__main__":
     t = Trades()

@@ -5,15 +5,11 @@ class Watchlist:
     def load():
         watchlist = set()
         
-        starting_positions = StartingPositions()
-        starting_positions.load()
-        for symbol in starting_positions.positions.keys():
-            watchlist.add(symbol)
+        [watchlist.add(symbol) for symbol in StartingPositions().load()]
+        [watchlist.add(t.symbol) for t in Trades().load()]
 
-        trades = Trades()
-        trades.load()
-        for trade in trades.trades:
-            watchlist.add(trade.symbol)
+        # for comparison graphs
+        watchlist.add('VTI')
 
         return watchlist
 

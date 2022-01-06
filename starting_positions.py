@@ -1,6 +1,6 @@
 import csv
 from dataclasses import dataclass
-import typing
+from typing import Dict
 
 @dataclass
 class Position:
@@ -23,12 +23,12 @@ class StartingPositions:
     FILE_NAME = 'data/starting_positions.csv'
 
     def __init__(self) -> None:
-        self.positions: typing.Dict[str, Position] = {}
+        self.positions: Dict[str, Position] = {}
 
-    def load(self):
+    def load(self) -> Dict[str, Position]:
         if self.positions:
             print("Starting position data has already been loaded")
-            return
+            return self.positions
 
         with open(self.FILE_NAME) as f:
             reader = csv.DictReader(f)
@@ -42,6 +42,7 @@ class StartingPositions:
                 self.positions[symbol].quantity += quantity
                 self.positions[symbol].costBasis += cost_basis
                 self.positions[symbol].resetStartValue()
+        return self.positions
 
 if __name__ == "__main__":
     sp = StartingPositions()
