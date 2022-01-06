@@ -25,20 +25,13 @@ class Trades:
         with open(self.FILE_NAME) as f:
             reader = csv.DictReader(f)
             for row in reader:
-                date = datetime.strptime(row['Date'], "%m/%d/%y")
-                action = row['Action']
-                symbol = row['Symbol']
-                quantity = float(row['Quantity'])
-                price = float(row['Price'])
-                # ignoring account for now
-                trade = Trade(
-                    date,
-                    action,
-                    symbol,
-                    quantity,
-                    price
-                )
-                self.trades.append(trade)
+                self.trades.append(Trade(
+                    datetime.strptime(row['Date'], "%m/%d/%y"),
+                    row['Action'],
+                    row['Symbol'],
+                    float(row['Quantity']),
+                    float(row['Price'])
+                ))
         self.trades.sort(key = lambda trade:trade.date)
         return self.trades
 

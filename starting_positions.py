@@ -34,13 +34,11 @@ class StartingPositions:
             reader = csv.DictReader(f)
             for row in reader:
                 symbol = row['Symbol']
-                quantity = float(row['Quantity'])
-                cost_basis = float(row['Cost Basis'])
                 # ignoring account for now
                 if symbol not in self.positions:
                     self.positions[symbol] = Position(symbol)
-                self.positions[symbol].quantity += quantity
-                self.positions[symbol].costBasis += cost_basis
+                self.positions[symbol].quantity += float(row['Quantity'])
+                self.positions[symbol].costBasis += float(row['Cost Basis'])
                 self.positions[symbol].resetStartValue()
         return self.positions
 
