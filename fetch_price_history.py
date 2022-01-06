@@ -13,7 +13,7 @@ class PriceHistoryFetcher:
         self.symbolStr = " ".join(symbols)
 
     def download(self, start_date):
-        return yf.download(self.symbolStr, start=start_date)["Adj Close"]
+        return yf.download(self.symbolStr, start=start_date)["Close"]
 
     def store(self, data: DataFrame) -> None:
         data.sort_index()
