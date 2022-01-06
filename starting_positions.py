@@ -20,7 +20,7 @@ class Position:
         return self.costBasis / self.quantity
 
 class StartingPositions:
-    FILE_NAME = 'starting_positions.csv'
+    FILE_NAME = 'data/starting_positions.csv'
 
     def __init__(self) -> None:
         self.positions: typing.Dict[str, Position] = {}

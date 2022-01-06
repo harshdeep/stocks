@@ -7,7 +7,7 @@ import numpy as numpy
 import argparse
 
 class PriceHistoryFetcher:
-    FILE_NAME = "prices.csv"
+    FILE_NAME = "data/prices.csv"
     def __init__(self, symbols) -> None:
         self.symbols = symbols
         self.symbolStr = " ".join(symbols)

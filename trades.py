@@ -12,7 +12,7 @@ class Trade:
     price: float
 
 class Trades:
-    FILE_NAME = 'trades.csv'
+    FILE_NAME = 'data/trades.csv'
 
     def __init__(self) -> None:
         self.trades: List[Trade] = []

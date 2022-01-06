@@ -18,8 +18,8 @@ class RenderPortfolio:
 
         # write local csv files
         date_range_str = Utils.dateRangeStr(start_date, end_date)
-        Utils.writeCSV(f'Timeseries {date_range_str}.csv', aggregate_perf)
-        Utils.writeCSV(f'Stocks {date_range_str}.csv', final_positions)
+        Utils.writeCSV(f'artifacts/Timeseries {date_range_str}.csv', aggregate_perf)
+        Utils.writeCSV(f'artifacts/Stocks {date_range_str}.csv', final_positions)
 
         chart_filename = self.renderAggregatePerfChart(aggregate_perf, start_date, end_date)
         summary = self.finalPositionSummary(final_positions)
@@ -126,7 +126,7 @@ class RenderPortfolio:
         ax3.grid()
 
         ax1.legend()
-        filename = f'Plot {Utils.dateRangeStr(start_date, end_date)}.png'
+        filename = f'artifacts/Plot {Utils.dateRangeStr(start_date, end_date)}.png'
         plt.savefig(filename)
         print(f'\nWrote {filename}')
         return filename
