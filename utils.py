@@ -1,5 +1,6 @@
 import csv
 from datetime import datetime
+from dataclasses import asdict
 
 class Utils:
     def currency(value):
@@ -14,6 +15,9 @@ class Utils:
             writer.writeheader()
             writer.writerows(rows)
     
+    def writeCSVObjects(filename, rows):
+        Utils.writeCSV(filename, [asdict(r) for r in rows])
+
     def today() -> datetime:
         today = datetime.today()
         return datetime(year=today.year, month=today.month, day=today.day)

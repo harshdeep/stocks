@@ -1,11 +1,35 @@
+from dataclasses import dataclass
 from datetime import datetime, timedelta
 from price_history import PriceHistory
 from send_email import EmailSender
 from starting_positions import Position, StartingPositions
 from trades import Trade, Trades
 from utils import Utils
-from typing import List, Dict
+from typing import List, Dict, Tuple
 
+@dataclass
+class AggregatePerfRow:
+    date: datetime
+    totalValue: float
+    totalGain: float
+    nonFBValue: float
+    nonFBGain: float
+    deposits: float
+    withdrawals: float
+    netNonFBValue: float
+
+@dataclass
+class FinalPosition:
+    symbol: str
+    startValue: float
+    startQuantity: float
+    value: float
+    quantity: float
+    gain: float
+    bought: float
+    sold: float
+    gainOnCurrentValue: float
+    gainOnStartValue: float
 
 class Portfolio:
     def __init__(self) -> None:
@@ -65,13 +89,13 @@ class Portfolio:
             if position.symbol != 'FB':
                 total_non_fb_gain += gain
 
-        Utils.writeCSV(f'State {Utils.dateToStr(today)}.csv', result)
+        Utils.writeCSV(f'artifacts/State {Utils.dateToStr(today)}.csv', result)
         Utils.print_currency('Overall gain', total_gain)
         Utils.print_currency('Non-FB gain', total_non_fb_gain)
 
         return result
 
-    def timeSeries(self, start_date, end_date):
+    def timeSeries(self, start_date, end_date) -> Tuple[List[AggregatePerfRow], List[FinalPosition]]:
         current_positions = self.startingPositions.positions.copy()
         date = self.trades.trades[0].date
         assert(date < start_date)
@@ -130,16 +154,16 @@ class Portfolio:
                     non_fb_value += current_value
                     non_fb_gain += current_gain
 
-            aggregate_perf.append({
-                'date': date,
-                'total_value': value,
-                'total_gain': gain,
-                'non_fb_value': non_fb_value,
-                'non_fb_gain': non_fb_gain,
-                'deposit': deposit,
-                'withdrawn': withdrawn,
-                'net_non_fb_value': non_fb_value - cumulative_deposit + cumulative_withdrawn
-            })
+            aggregate_perf.append(AggregatePerfRow(
+                date,
+                value,
+                gain,
+                non_fb_value,
+                non_fb_gain,
+                deposit,
+                withdrawn,
+                non_fb_value - cumulative_deposit + cumulative_withdrawn
+            ))
             date += day
 
         final_positions = []
@@ -152,20 +176,20 @@ class Portfolio:
             net_gain = net_final_value - position.startValue
             if position.startQuantity == 0 and position.quantity == 0 and traded_value['bought'] == 0:
                 continue
-            final_positions.append({
-                'symbol': symbol,
-                'start_value': position.startValue,
-                'start_quantity': position.startQuantity,
-                'value': value,
-                'quantity': position.quantity,
-                'gain': gain,
-                'gain_on_current_value': 0 if value == 0 else gain / value,
-                'bought': traded_value['bought'],
-                'sold': traded_value['sold'],
-                'gain_on_start_value': 0 if position.startValue == 0 else net_gain / position.startValue,
-            })
+            final_positions.append(FinalPosition(
+                symbol,
+                position.startValue,
+                position.startQuantity,
+                value,
+                position.quantity,
+                gain,
+                traded_value['bought'],
+                traded_value['sold'],
+                0 if value == 0 else gain / value,
+                0 if position.startValue == 0 else net_gain / position.startValue,
+            ))
         return (aggregate_perf, final_positions)
 
 if __name__ == "__main__":
-    Portfolio().state()
+    #Portfolio().state()
     Portfolio().timeSeries(datetime.fromisoformat('2021-01-01'), Utils.today())

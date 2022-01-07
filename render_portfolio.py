@@ -1,12 +1,78 @@
 from datetime import datetime, timedelta
+from posixpath import join
 from utils import Utils
-from portfolio import Portfolio
-from typing import List, Dict
+from portfolio import AggregatePerfRow, FinalPosition, Portfolio
+from typing import Final, List, Dict
 from matplotlib import pyplot as plt
 from matplotlib import ticker as tick
 import argparse
 import numpy as np
 from send_email import EmailSender
+from dataclasses import asdict
+
+class FinalPositionSummary:
+    absoluteWinners: List[FinalPosition]
+    absoluteLosers: List[FinalPosition]
+    percentWinners: List[FinalPosition]
+    percentLosers: List[FinalPosition]
+    bought: List[FinalPosition]
+    sold: List[FinalPosition]
+    startDate: datetime
+    endDate: datetime
+
+    def __init__(self, final_positions: List[FinalPosition], start_date: datetime, end_date: datetime) -> None:
+        sorted_by_gain = sorted(final_positions, key=lambda x: x.gain)
+        self.absoluteWinners = list(reversed(sorted_by_gain[-5:]))
+        self.absoluteLosers = sorted_by_gain[:5]
+
+        sorted_by_percent_gain = sorted(final_positions, key=lambda x: x.gainOnStartValue)
+        self.percentWinners = list(reversed(sorted_by_percent_gain[-5:]))
+        self.percentLosers = sorted_by_percent_gain[:5]
+
+        self.bought = sorted(list(filter(lambda x: x.bought != 0, final_positions)), key=lambda x: x.bought, reverse=True)
+        self.sold = sorted(list(filter(lambda x: x.sold != 0, final_positions)), key=lambda x: x.sold, reverse=True)
+
+        self.startDate = start_date
+        self.endDate = end_date
+
+    def rows(self, positions: List[FinalPosition], renderFunc) -> str:
+        return '\n'.join([f'| {p.symbol} | {renderFunc(p)} |' for p in positions])
+
+    def markdown(self) -> str:
+        text = f"""
+## Summary from {Utils.dateRangeStr(self.startDate, self.endDate)}
+
+### Biggest winners
+| Symbol | Delta |
+| ---    | ---  |
+{self.rows(self.absoluteWinners, lambda p: Utils.currency(p.gain))}
+
+### Biggest losers
+| Symbol | Delta |
+| ---    | ---  |
+{self.rows(self.absoluteLosers, lambda p: Utils.currency(p.gain))}
+
+### Biggest winners by percent
+| Symbol | Delta |
+| ---    | ---  |
+{self.rows(self.percentWinners, lambda p: f'{p.gainOnStartValue * 100:.0f}%')}
+
+### Biggest losers by percent
+| Symbol | Delta |
+| ---    | ---  |
+{self.rows(self.percentLosers, lambda p: f'{p.gainOnStartValue * 100:.0f}%')}
+
+### Bought
+| Symbol | Amount |
+| ---    | ---  |
+{self.rows(self.bought, lambda p: Utils.currency(p.bought))}
+
+### Sold
+| Symbol | Amount |
+| ---    | ---  |
+{self.rows(self.sold, lambda p: Utils.currency(p.sold))}
+        """
+        return text
 
 class RenderPortfolio:
     def __init__(self, dest: str) -> None:
@@ -18,12 +84,11 @@ class RenderPortfolio:
 
         # write local csv files
         date_range_str = Utils.dateRangeStr(start_date, end_date)
-        Utils.writeCSV(f'artifacts/Timeseries {date_range_str}.csv', aggregate_perf)
-        Utils.writeCSV(f'artifacts/Stocks {date_range_str}.csv', final_positions)
+        Utils.writeCSVObjects(f'artifacts/Timeseries {date_range_str}.csv', aggregate_perf)
+        Utils.writeCSVObjects(f'artifacts/Stocks {date_range_str}.csv', final_positions)
 
         chart_filename = self.renderAggregatePerfChart(aggregate_perf, start_date, end_date)
-        summary = self.finalPositionSummary(final_positions)
-        summaryMarkdown = self.finalPositionSummaryMarkdown(summary, start_date, end_date)
+        summaryMarkdown = FinalPositionSummary(final_positions, start_date, end_date).markdown()
 
         if self.dest == "console":
             print(summaryMarkdown)
@@ -54,7 +119,7 @@ class RenderPortfolio:
         start_date = datetime(year=end_date.year, month=1, day=1)
         self.timeseries(start_date, end_date)
 
-    def renderAggregatePerfChart(self, aggregate_perf: List[Dict], start_date: datetime, end_date: datetime) -> str:
+    def renderAggregatePerfChart(self, aggregate_perf: List[AggregatePerfRow], start_date: datetime, end_date: datetime) -> str:
         fig, (ax1, ax2, ax3) = plt.subplots(3, 1)
 
         fig.set_size_inches(20, 15)
@@ -66,10 +131,10 @@ class RenderPortfolio:
 
         ax1.get_yaxis().set_major_formatter(tick.FuncFormatter(lambda x, _: Utils.currency(x)))
         
-        dates = [r['date'] for r in aggregate_perf]
+        dates = [r.date for r in aggregate_perf]
 
-        non_fb_value = [r['non_fb_value'] for r in aggregate_perf]
-        net_non_fb_value = [r['net_non_fb_value'] for r in aggregate_perf]
+        non_fb_value = [r.nonFBValue for r in aggregate_perf]
+        net_non_fb_value = [r.netNonFBValue for r in aggregate_perf]
 
         ax1.plot(dates, non_fb_value, label='Value')
         ax1.plot(dates, net_non_fb_value, label='Net value')
@@ -98,7 +163,7 @@ class RenderPortfolio:
         ax2.set_ylabel('Gain')
         ax2.get_yaxis().set_major_formatter(tick.FuncFormatter(lambda x, _: Utils.currency(x)))
         ax2.grid()
-        non_fb_gain = [r['non_fb_gain'] for r in aggregate_perf]
+        non_fb_gain = [r.nonFBGain for r in aggregate_perf]
         ax2.plot(dates, non_fb_gain, label='Gain')
         min_index = np.argmin(non_fb_gain)
         ax2.annotate(
@@ -120,8 +185,8 @@ class RenderPortfolio:
             color='black'
         )
 
-        ax3.bar(dates, [r['deposit'] for r in aggregate_perf], color='blue')
-        ax3.bar(dates, [-1*r['withdrawn'] for r in aggregate_perf], color='red')
+        ax3.bar(dates, [r.deposits for r in aggregate_perf], color='blue')
+        ax3.bar(dates, [-1*r.withdrawals for r in aggregate_perf], color='red')
         ax3.set_ylabel('Transactions')
         ax3.grid()
 
@@ -140,80 +205,7 @@ class RenderPortfolio:
         multiplier = scale_to / series[i]
         return [multiplier * v for v in series]
 
-    def finalPositionSummary(self, final_positions):
-        summary = {}
-        sorted_by_gain = sorted(final_positions, key=lambda x: x['gain'])
-        summary['absolute_gain'] = {
-            'losers': sorted_by_gain[:5],
-            'winners': list(reversed(sorted_by_gain[-5:])),
-        }
-
-        sorted_by_percent_gain = sorted(final_positions, key=lambda x: x['gain_on_start_value'])
-        summary['percent_gain'] = {
-            'losers': sorted_by_percent_gain[:5],
-            'winners': list(reversed(sorted_by_percent_gain[-5:])),
-        }
-
-        summary['bought'] = sorted(list(filter(lambda x: x['bought'] != 0, final_positions)), key=lambda x: x['bought'], reverse=True)
-        summary['sold'] = sorted(list(filter(lambda x: x['sold'] != 0, final_positions)), key=lambda x: x['sold'], reverse=True)
-        return summary
-        
-    def finalPositionSummaryMarkdown(self, summary, start_date, end_date):
-        absolute_gain_strings = {}
-        for key, positions in summary['absolute_gain'].items():
-            absolute_gain_strings[key] = ''
-            for position in positions:
-                absolute_gain_strings[key] += f"| {position['symbol']} | {Utils.currency(position['gain'])} | \n"
-
-        percent_gain_strings = {}
-        for key, positions in summary['percent_gain'].items():
-            percent_gain_strings[key] = ''
-            for position in positions:
-                percent_gain_strings[key] += f"| {position['symbol']} | {position['gain_on_start_value'] * 100:.0f}% | \n"
-
-        transaction_strings = {}
-        for transaction in ['bought', 'sold']:
-            transaction_strings[transaction] = ''
-            for position in summary[transaction]:
-                transaction_strings[transaction] += f"| {position['symbol']} | {Utils.currency(position[transaction])} | \n"
-        
-        text = f"""
-## Summary from {Utils.dateRangeStr(start_date, end_date)}
-
-### Biggest winners
-| Symbol | Delta |
-| ---    | ---  |
-{absolute_gain_strings['winners']}
-
-### Biggest losers
-| Symbol | Delta |
-| ---    | ---  |
-{absolute_gain_strings['losers']}
-
-### Biggest winners by percent
-| Symbol | Delta |
-| ---    | ---  |
-{percent_gain_strings['winners']}
-
-### Biggest losers by percent
-| Symbol | Delta |
-| ---    | ---  |
-{percent_gain_strings['losers']}
-
-### Bought
-| Symbol | Amount |
-| ---    | ---  |
-{transaction_strings['bought']}
-
-### Sold
-| Symbol | Amount |
-| ---    | ---  |
-{transaction_strings['sold']}
-        """
-        return text
-
-
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('period', choices=['week', 'month', 'quarter', 'year', 'ytd', 'test'])
     parser.add_argument('-d', '--dest', choices=['console', 'email'], default='console')
@@ -233,3 +225,11 @@ if __name__ == "__main__":
         rp.ytd()
     elif period == 'test':
         print("Test 123\n")
+
+def test():
+    rp = RenderPortfolio('console')
+    rp.ytd()
+
+if __name__ == "__main__":
+    main()
+    #test()
