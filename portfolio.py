@@ -10,8 +10,10 @@ from typing import List, Dict, Tuple
 @dataclass
 class AggregatePerfRow:
     date: datetime
+    totalCostBasis: float
     totalValue: float
     totalGain: float
+    nonFBCostBasis: float
     nonFBValue: float
     nonFBGain: float
     deposits: float
@@ -60,41 +62,6 @@ class Portfolio:
             positions[symbol].quantity -= quantity
             positions[symbol].costBasis -= cost_basis
 
-    def state(self):
-        currentPositions = self.startingPositions.positions.copy()
-
-        for trade in self.trades.trades:
-            self.applyTrade(trade, currentPositions)
-
-        today = Utils.today()
-
-        result = []
-        total_gain = 0
-        total_non_fb_gain = 0
-
-        for position in currentPositions.values():
-            current_price = self.priceHistory.price(today, position.symbol)
-            current_value = position.quantity * current_price
-            gain = current_value - position.costBasis
-            result.append({
-                'symbol': position.symbol,
-                'quantity': position.quantity,
-                'cost_basis': position.costBasis,
-                'current_value': current_value,
-                'gain': gain,
-                'cost_basis_per_share': position.costBasisPerShare(),
-                'current_price_per_share': current_price,
-            })
-            total_gain += gain
-            if position.symbol != 'FB':
-                total_non_fb_gain += gain
-
-        Utils.writeCSV(f'artifacts/State {Utils.dateToStr(today)}.csv', result)
-        Utils.print_currency('Overall gain', total_gain)
-        Utils.print_currency('Non-FB gain', total_non_fb_gain)
-
-        return result
-
     def timeSeries(self, start_date, end_date) -> Tuple[List[AggregatePerfRow], List[FinalPosition]]:
         current_positions = self.startingPositions.positions.copy()
         date = self.trades.trades[0].date
@@ -141,23 +108,29 @@ class Portfolio:
             cumulative_deposit += deposit
             cumulative_withdrawn += withdrawn
 
+            cost_basis = 0
             value = 0
             gain = 0
             non_fb_value = 0
             non_fb_gain = 0
+            non_fb_cost_basis = 0
             for position in current_positions.values():
                 current_value = self.priceHistory.positionValue(date, position)
                 current_gain = current_value - position.costBasis
                 value += current_value
                 gain += current_gain
+                cost_basis += position.costBasis
                 if position.symbol != 'FB':
                     non_fb_value += current_value
                     non_fb_gain += current_gain
+                    non_fb_cost_basis += position.costBasis
 
             aggregate_perf.append(AggregatePerfRow(
                 date,
+                cost_basis,
                 value,
                 gain,
+                non_fb_cost_basis,
                 non_fb_value,
                 non_fb_gain,
                 deposit,
@@ -191,5 +164,4 @@ class Portfolio:
         return (aggregate_perf, final_positions)
 
 if __name__ == "__main__":
-    #Portfolio().state()
     Portfolio().timeSeries(datetime.fromisoformat('2021-01-01'), Utils.today())

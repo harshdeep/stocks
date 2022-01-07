@@ -43,8 +43,8 @@ class FinalSummary:
     def markdown(self) -> str:
         text = f"""
 ## Summary from {Utils.dateRangeStr(self.startDate, self.endDate)}
-### Overall: {Utils.currency(self.finalPerf.totalGain)}, {Utils.percent(self.finalPerf.totalGain / self.finalPerf.totalValue)}
-### Non FB: {Utils.currency(self.finalPerf.nonFBGain)}, {Utils.percent(self.finalPerf.nonFBGain / self.finalPerf.nonFBValue)}
+### Overall: {Utils.currency(self.finalPerf.totalGain)}, {Utils.percent(self.finalPerf.totalGain / self.finalPerf.totalCostBasis)}
+### Non FB: {Utils.currency(self.finalPerf.nonFBGain)}, {Utils.percent(self.finalPerf.nonFBGain / self.finalPerf.nonFBCostBasis)}
 
 ### Biggest winners
 | Symbol | Delta |
