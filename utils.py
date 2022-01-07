@@ -6,6 +6,9 @@ class Utils:
     def currency(value):
         return f'${value:,.0f}'.replace('$-', '-$')
 
+    def percent(value):
+        return f'{value * 100:.0f}%'
+
     def print_currency(context, value):
         print(f'{context}: {Utils.currency(value)}')
 

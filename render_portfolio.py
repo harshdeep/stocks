@@ -10,7 +10,7 @@ import numpy as np
 from send_email import EmailSender
 from dataclasses import asdict
 
-class FinalPositionSummary:
+class FinalSummary:
     absoluteWinners: List[FinalPosition]
     absoluteLosers: List[FinalPosition]
     percentWinners: List[FinalPosition]
@@ -19,8 +19,10 @@ class FinalPositionSummary:
     sold: List[FinalPosition]
     startDate: datetime
     endDate: datetime
+    finalPerf: AggregatePerfRow
 
-    def __init__(self, final_positions: List[FinalPosition], start_date: datetime, end_date: datetime) -> None:
+    def __init__(self, final_positions: List[FinalPosition], aggregate_perf: List[AggregatePerfRow], start_date: datetime, end_date: datetime) -> None:
+        self.finalPerf = aggregate_perf[-1]
         sorted_by_gain = sorted(final_positions, key=lambda x: x.gain)
         self.absoluteWinners = list(reversed(sorted_by_gain[-5:]))
         self.absoluteLosers = sorted_by_gain[:5]
@@ -41,6 +43,8 @@ class FinalPositionSummary:
     def markdown(self) -> str:
         text = f"""
 ## Summary from {Utils.dateRangeStr(self.startDate, self.endDate)}
+### Overall: {Utils.currency(self.finalPerf.totalGain)}, {Utils.percent(self.finalPerf.totalGain / self.finalPerf.totalValue)}
+### Non FB: {Utils.currency(self.finalPerf.nonFBGain)}, {Utils.percent(self.finalPerf.nonFBGain / self.finalPerf.nonFBValue)}
 
 ### Biggest winners
 | Symbol | Delta |
@@ -55,12 +59,12 @@ class FinalPositionSummary:
 ### Biggest winners by percent
 | Symbol | Delta |
 | ---    | ---  |
-{self.rows(self.percentWinners, lambda p: f'{p.gainOnStartValue * 100:.0f}%')}
+{self.rows(self.percentWinners, lambda p: Utils.percent(p.gainOnStartValue))}
 
 ### Biggest losers by percent
 | Symbol | Delta |
 | ---    | ---  |
-{self.rows(self.percentLosers, lambda p: f'{p.gainOnStartValue * 100:.0f}%')}
+{self.rows(self.percentLosers, lambda p: Utils.percent(p.gainOnStartValue))}
 
 ### Bought
 | Symbol | Amount |
@@ -88,7 +92,7 @@ class RenderPortfolio:
         Utils.writeCSVObjects(f'artifacts/Stocks {date_range_str}.csv', final_positions)
 
         chart_filename = self.renderAggregatePerfChart(aggregate_perf, start_date, end_date)
-        summaryMarkdown = FinalPositionSummary(final_positions, start_date, end_date).markdown()
+        summaryMarkdown = FinalSummary(final_positions, aggregate_perf, start_date, end_date).markdown()
 
         if self.dest == "console":
             print(summaryMarkdown)
