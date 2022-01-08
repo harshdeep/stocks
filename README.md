@@ -17,7 +17,7 @@ After you clone the repository
         4. Quantity (number of shares bought, sold or granted)
         5. Price (per share)
         6. Account (where you made the trade)
-3. Now run `python fetch_price_history.py fresh`. This will create a trades.csv file in the /data folder with price history of all stocks that are declared in starting_positions.csv and trades.csv.
+3. Now run `python fetch_price_history.py fresh`. This will create a prices.csv file in the /data folder with price history of all stocks that are declared in starting_positions.csv and trades.csv.
 4. Create a ./artifacts folder within the main folder
 5. Run `python render_portfolio.py ytd` to see your YTD performance. It also accepts "month", "week", and "quarter" as arguments. It will create 3 artifacts in ./artifacts:
     1. A .png with graphs showing day-to-day performance, including comparison with VTI
@@ -34,4 +34,6 @@ email = {
 }
 ```
 7. Now run `python render_portfolio.py ytd --dest email` and it will send you a nicely formatted email.
-8. Set up launchd jobs to automate receiving these emails and to update the price history. Check out the /launchd folder in the code repo for examples.
+8. To see which lots are at a loss right now, and can potentially be harvested for taxes: `python lot_analysis.py losses --thresh 0.9` (lists lots that have lost 10% ot more of their value)
+9. Utility to list which accounts hold a particular symbol: `python lot_analysis.py accounts --sym AAPL`
+10. Set up launchd jobs to automate receiving these emails and to update the price history. Check out the /launchd folder in the code repo for examples.
