@@ -65,7 +65,7 @@ class Portfolio:
     def timeSeries(self, start_date, end_date) -> Tuple[List[AggregatePerfRow], List[FinalPosition]]:
         current_positions = self.startingPositions.positions.copy()
         date = self.trades.trades[0].date
-        assert(date < start_date)
+        assert(date <= start_date)
         assert(start_date < end_date)
 
         day = timedelta(days=1)

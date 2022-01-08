@@ -10,6 +10,7 @@ class Trade:
     symbol: str
     quantity: float
     price: float
+    account: str
 
 class Trades:
     FILE_NAME = 'data/trades.csv'
@@ -30,7 +31,8 @@ class Trades:
                     row['Action'],
                     row['Symbol'],
                     float(row['Quantity']),
-                    float(row['Price'])
+                    float(row['Price']),
+                    row['Account']
                 ))
         self.trades.sort(key = lambda trade:trade.date)
         return self.trades
