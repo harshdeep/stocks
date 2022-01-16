@@ -19,6 +19,7 @@ class AggregatePerfRow:
     deposits: float
     withdrawals: float
     netNonFBValue: float
+    dayNonFBGain: float
 
 @dataclass
 class FinalPosition:
@@ -81,7 +82,7 @@ class Portfolio:
             position.costBasis = self.priceHistory.positionValue(start_date, position)
             position.resetStartValue()
 
-        aggregate_perf = []
+        aggregate_perf: List[AggregatePerfRow] = []
         cumulative_deposit = 0
         cumulative_withdrawn = 0
 
@@ -125,6 +126,10 @@ class Portfolio:
                     non_fb_gain += current_gain
                     non_fb_cost_basis += position.costBasis
 
+            day_non_fb_gain = 0
+            if len(aggregate_perf) > 0:
+                day_non_fb_gain = (non_fb_value - aggregate_perf[-1].nonFBValue)/aggregate_perf[-1].nonFBValue
+
             aggregate_perf.append(AggregatePerfRow(
                 date,
                 cost_basis,
@@ -135,7 +140,8 @@ class Portfolio:
                 non_fb_gain,
                 deposit,
                 withdrawn,
-                non_fb_value - cumulative_deposit + cumulative_withdrawn
+                non_fb_value - cumulative_deposit + cumulative_withdrawn,
+                day_non_fb_gain
             ))
             date += day
 

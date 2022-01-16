@@ -64,7 +64,7 @@ class PriceHistoryFetcher:
         self.store(updated)
         return updated
 
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('method', choices=['fresh', 'incremental'])
     args = parser.parse_args()
@@ -75,3 +75,6 @@ if __name__ == "__main__":
         phf.fetch_incremental()
     else:
         phf.fetch_fresh()
+
+if __name__ == "__main__":
+    main()
