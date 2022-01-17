@@ -31,8 +31,12 @@ class FinalPosition:
     gain: float
     bought: float
     sold: float
-    gainOnCurrentValue: float
+    currentPrice: float
+    mean50Day: float
+    mean200Day: float
     gainOnStartValue: float
+    gainOnMean50Day: float
+    gainOnMean200Day: float
 
 class Portfolio:
     def __init__(self) -> None:
@@ -155,6 +159,9 @@ class Portfolio:
             net_gain = net_final_value - position.startValue
             if position.startQuantity == 0 and position.quantity == 0 and traded_value['bought'] == 0:
                 continue
+            current_price = self.priceHistory.price(end_date, symbol)
+            mean_50d = self.priceHistory.movingAverage(symbol, 50)
+            mean_200d = self.priceHistory.movingAverage(symbol, 200)
             final_positions.append(FinalPosition(
                 symbol,
                 position.startValue,
@@ -164,8 +171,12 @@ class Portfolio:
                 gain,
                 traded_value['bought'],
                 traded_value['sold'],
-                0 if value == 0 else gain / value,
-                0 if position.startValue == 0 else net_gain / position.startValue,
+                current_price,
+                mean_50d,
+                mean_200d,
+                0 if position.startValue == 0 else net_gain / position.startValue * 100,
+                (current_price - mean_50d) / mean_50d * 100,
+                (current_price - mean_200d) / mean_200d * 100,
             ))
         return (aggregate_perf, final_positions)
 

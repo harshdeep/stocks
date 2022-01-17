@@ -17,6 +17,8 @@ class PriceHistoryFetcher:
 
     def store(self, data: DataFrame) -> None:
         data.sort_index()
+        data.ffill(inplace=True)
+        data.bfill(inplace=True)
         data.to_csv(self.FILE_NAME)
 
     def fetch_stored(self) -> DataFrame:
@@ -27,7 +29,7 @@ class PriceHistoryFetcher:
     def fetch_fresh(self):
         data = self.download("2019-01-01")
         self.store(data)
-        return data
+        return self.fetch_stored()
 
     def last_date_with_data(self, data: DataFrame) -> date:
         vti = data.loc[:, ['VTI']]
@@ -62,7 +64,7 @@ class PriceHistoryFetcher:
 
         # store updated data
         self.store(updated)
-        return updated
+        return self.fetch_stored()
 
 def main():
     parser = argparse.ArgumentParser()
