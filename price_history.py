@@ -9,7 +9,7 @@ class PriceHistory:
         phf = PriceHistoryFetcher(Watchlist.load())
         self.prices = phf.fetch_stored()
 
-    def price(self, date, symbol):
+    def price(self, date: date, symbol):
         retries = 0
         while date not in self.prices.index:
             date = date - timedelta(days=1)

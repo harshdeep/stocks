@@ -18,6 +18,7 @@ class PriceHistoryFetcher:
     def store(self, data: DataFrame) -> None:
         data.sort_index()
         data.index = [d.date() for d in data.index]
+        data.index.name = "Date"
         data.ffill(inplace=True)
         data.bfill(inplace=True)
         data.to_csv(self.FILE_NAME)
@@ -26,6 +27,7 @@ class PriceHistoryFetcher:
         stored = pd.read_csv(self.FILE_NAME, index_col='Date')
         stored.index = pd.to_datetime(stored.index)
         stored.index = [d.date() for d in stored.index]
+        stored.index.name = "Date"
         return stored
 
     def fetch_fresh(self):
@@ -81,6 +83,6 @@ def main():
         phf.fetch_fresh()
 
 if __name__ == "__main__":
-    #main()
-    phf = PriceHistoryFetcher(Watchlist.load())
-    print(phf.fetch_incremental())
+    main()
+    #phf = PriceHistoryFetcher(Watchlist.load())
+    #print(phf.fetch_incremental())
