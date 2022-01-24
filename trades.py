@@ -1,11 +1,11 @@
 import csv
-from datetime import datetime
+from datetime import datetime, date
 from dataclasses import dataclass
 from typing import List
 
 @dataclass
 class Trade:
-    date: datetime
+    date: date
     action: str
     symbol: str
     quantity: float
@@ -27,7 +27,7 @@ class Trades:
             reader = csv.DictReader(f)
             for row in reader:
                 self.trades.append(Trade(
-                    datetime.strptime(row['Date'], "%m/%d/%y"),
+                    datetime.strptime(row['Date'], "%m/%d/%y").date(),
                     row['Action'],
                     row['Symbol'],
                     float(row['Quantity']),

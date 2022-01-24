@@ -19,7 +19,7 @@ class PriceHistory:
                 return 0
         return self.prices.loc[date, symbol]
 
-    def positionValue(self, date: datetime, position: Position):
+    def positionValue(self, date: date, position: Position):
         if position.quantity == 0:
             return 0
         price = self.price(date, position.symbol)
@@ -27,7 +27,7 @@ class PriceHistory:
             return position.costBasis
         return position.quantity * price
 
-    def priceHistory(self, symbol: str, start_date: datetime, end_date: datetime):
+    def priceHistory(self, symbol: str, start_date: date, end_date: date):
         df = self.prices.loc[start_date:end_date, symbol]
         last_value = df[-1]
         date = df.index[-1]
@@ -42,4 +42,4 @@ class PriceHistory:
 
 if __name__ == "__main__":
     p = PriceHistory()
-    print(p.price(datetime.fromisoformat('2019-01-27'), 'AAPL'))
+    print(p.price(datetime.fromisoformat('2019-01-27').date(), 'AAPL'))

@@ -1,7 +1,6 @@
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from price_history import PriceHistory
-from send_email import EmailSender
 from starting_positions import Position, StartingPositions
 from trades import Trade, Trades
 from utils import Utils
@@ -9,7 +8,7 @@ from typing import List, Dict, Tuple
 
 @dataclass
 class AggregatePerfRow:
-    date: datetime
+    date: date
     totalCostBasis: float
     totalValue: float
     totalGain: float
@@ -67,7 +66,7 @@ class Portfolio:
             positions[symbol].quantity -= quantity
             positions[symbol].costBasis -= cost_basis
 
-    def timeSeries(self, start_date, end_date) -> Tuple[List[AggregatePerfRow], List[FinalPosition]]:
+    def timeSeries(self, start_date: date, end_date: date) -> Tuple[List[AggregatePerfRow], List[FinalPosition]]:
         current_positions = self.startingPositions.positions.copy()
         date = self.trades.trades[0].date
         assert(date <= start_date)
@@ -181,4 +180,4 @@ class Portfolio:
         return (aggregate_perf, final_positions)
 
 if __name__ == "__main__":
-    Portfolio().timeSeries(datetime.fromisoformat('2021-01-01'), Utils.today())
+    Portfolio().timeSeries(datetime.fromisoformat('2021-01-01').date(), Utils.today())

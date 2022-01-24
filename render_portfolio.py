@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from posixpath import join
 from utils import Utils
 from portfolio import AggregatePerfRow, FinalPosition, Portfolio
@@ -17,11 +17,11 @@ class FinalSummary:
     percentLosers: List[FinalPosition]
     bought: List[FinalPosition]
     sold: List[FinalPosition]
-    startDate: datetime
-    endDate: datetime
+    startDate: date
+    endDate: date
     finalPerf: AggregatePerfRow
 
-    def __init__(self, final_positions: List[FinalPosition], aggregate_perf: List[AggregatePerfRow], start_date: datetime, end_date: datetime) -> None:
+    def __init__(self, final_positions: List[FinalPosition], aggregate_perf: List[AggregatePerfRow], start_date: date, end_date: date) -> None:
         self.finalPerf = aggregate_perf[-1]
         sorted_by_gain = sorted(final_positions, key=lambda x: x.gain)
         self.absoluteWinners = list(reversed(sorted_by_gain[-5:]))
@@ -59,12 +59,12 @@ class FinalSummary:
 ### Biggest winners by percent
 | Symbol | Delta |
 | ---    | ---  |
-{self.rows(self.percentWinners, lambda p: Utils.percent(p.gainOnStartValue))}
+{self.rows(self.percentWinners, lambda p: Utils.percent(p.gainOnStartValue/100.0))}
 
 ### Biggest losers by percent
 | Symbol | Delta |
 | ---    | ---  |
-{self.rows(self.percentLosers, lambda p: Utils.percent(p.gainOnStartValue))}
+{self.rows(self.percentLosers, lambda p: Utils.percent(p.gainOnStartValue/100.0))}
 
 ### Bought
 | Symbol | Amount |
@@ -83,7 +83,7 @@ class RenderPortfolio:
         self.portfolio = Portfolio()
         self.dest = dest
 
-    def timeseries(self, start_date: datetime, end_date: datetime):
+    def timeseries(self, start_date: date, end_date: date):
         (aggregate_perf, final_positions) = self.portfolio.timeSeries(start_date, end_date)
 
         # write local csv files
@@ -120,10 +120,10 @@ class RenderPortfolio:
 
     def ytd(self):
         end_date = Utils.today()
-        start_date = datetime(year=end_date.year, month=1, day=1)
+        start_date = datetime(year=end_date.year, month=1, day=1).date()
         self.timeseries(start_date, end_date)
 
-    def renderAggregatePerfChart(self, aggregate_perf: List[AggregatePerfRow], start_date: datetime, end_date: datetime) -> str:
+    def renderAggregatePerfChart(self, aggregate_perf: List[AggregatePerfRow], start_date: date, end_date: date) -> str:
         fig, (ax1, ax2, ax3) = plt.subplots(3, 1)
 
         fig.set_size_inches(20, 15)
@@ -200,7 +200,7 @@ class RenderPortfolio:
         print(f'\nWrote {filename}')
         return filename
 
-    def stockPriceHistoryToPlot(self, symbol: str, start_date: datetime, end_date: datetime, scale_to: float):
+    def stockPriceHistoryToPlot(self, symbol: str, start_date: date, end_date: date, scale_to: float):
         series = self.portfolio.priceHistory.priceHistory(symbol, start_date, end_date)
         # adjust for scale
         i=0

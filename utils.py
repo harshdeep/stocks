@@ -1,5 +1,5 @@
 import csv
-from datetime import datetime
+from datetime import datetime, date
 from dataclasses import asdict
 
 class Utils:
@@ -21,12 +21,11 @@ class Utils:
     def writeCSVObjects(filename, rows):
         Utils.writeCSV(filename, [asdict(r) for r in rows])
 
-    def today() -> datetime:
-        today = datetime.today()
-        return datetime(year=today.year, month=today.month, day=today.day)
+    def today() -> date:
+        return datetime.today().date()
 
-    def dateToStr(date: datetime) -> str:
-        return date.date().isoformat()
+    def dateToStr(date: date) -> str:
+        return date.isoformat()
     
-    def dateRangeStr(start_date: datetime, end_date: datetime) -> str:
+    def dateRangeStr(start_date: date, end_date: date) -> str:
         return f'{Utils.dateToStr(start_date)} to {Utils.dateToStr(end_date)}'

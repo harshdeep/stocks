@@ -17,6 +17,7 @@ class PriceHistoryFetcher:
 
     def store(self, data: DataFrame) -> None:
         data.sort_index()
+        data.index = [d.date() for d in data.index]
         data.ffill(inplace=True)
         data.bfill(inplace=True)
         data.to_csv(self.FILE_NAME)
@@ -24,6 +25,7 @@ class PriceHistoryFetcher:
     def fetch_stored(self) -> DataFrame:
         stored = pd.read_csv(self.FILE_NAME, index_col='Date')
         stored.index = pd.to_datetime(stored.index)
+        stored.index = [d.date() for d in stored.index]
         return stored
 
     def fetch_fresh(self):
@@ -44,7 +46,7 @@ class PriceHistoryFetcher:
         stored = self.fetch_stored()
 
         # if it's not outdated, just return it
-        last_date_with_data = self.last_date_with_data(stored).date()
+        last_date_with_data = self.last_date_with_data(stored)
         if last_date_with_data >= date.today():
             print("Not updating because we have today's data")
             return stored
@@ -79,4 +81,6 @@ def main():
         phf.fetch_fresh()
 
 if __name__ == "__main__":
-    main()
+    #main()
+    phf = PriceHistoryFetcher(Watchlist.load())
+    print(phf.fetch_incremental())
