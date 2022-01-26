@@ -10,14 +10,14 @@
     <array>
         <string>/Users/harshdeep/dev/stocks/env/bin/python</string>
         <string>/Users/harshdeep/dev/stocks/fetch_price_history.py</string>
-	<string>month</string>
+	<string>fresh</string>
     </array>
     <key>StartCalendarInterval</key>
     <dict>
         <key>Minute</key>
         <integer>0</integer>
         <key>Hour</key>
-        <integer>19</integer>
+        <integer>13</integer>
     </dict>
     <key>StandardOutPath</key>
     <string>/Users/harshdeep/dev/stocks/std_out_price_history.log</string>

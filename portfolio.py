@@ -4,7 +4,7 @@ from price_history import PriceHistory
 from starting_positions import Position, StartingPositions
 from trades import Trade, Trades
 from utils import Utils
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, MutableSet
 
 @dataclass
 class AggregatePerfRow:
@@ -178,6 +178,14 @@ class Portfolio:
                 (current_price - mean_200d) / mean_200d * 100,
             ))
         return (aggregate_perf, final_positions)
+
+    def activePositions(self) -> MutableSet[str]:
+        today = Utils.today()
+        yesterday = today - timedelta(days=1)
+        (_, positions) = self.timeSeries(yesterday, today)
+        active_positions = set()
+        [active_positions.add(p.symbol) for p in positions]
+        return active_positions
 
 if __name__ == "__main__":
     Portfolio().timeSeries(datetime.fromisoformat('2021-01-01').date(), Utils.today())

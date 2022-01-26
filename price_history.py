@@ -36,9 +36,20 @@ class PriceHistory:
             df[date] = last_value
         return df.values.tolist()
 
-    def movingAverage(self, symbol: str, window: int):
-        window = int((7 * window)/5) # since we fill in days with no values, which is mainly weekends. not perfect but ok for the job
-        return np.mean(self.prices.tail(window)[symbol])
+    def adjustWindow(self, window: int) -> int:
+        # since we fill in days with no values, which is mainly weekends. not perfect but ok for the job
+        return int((7 * window)/5)
+
+    def movingAverage(self, symbol: str, window: int) -> float:
+        return np.mean(self.prices.tail(self.adjustWindow(window))[symbol])
+
+    def max(self, symbol: str, window: int) -> float:
+        return np.max(self.prices.tail(self.adjustWindow(window))[symbol])
+
+    def min(self, symbol: str, window: int) -> float:
+        return np.min(self.prices.tail(self.adjustWindow(window))[symbol])
+
+
 
 if __name__ == "__main__":
     p = PriceHistory()
