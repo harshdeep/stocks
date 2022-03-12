@@ -5,6 +5,7 @@ from watchlist import Watchlist
 import pandas as pd
 import numpy as numpy
 import argparse
+from utils import Utils
 
 class PriceHistoryFetcher:
     FILE_NAME = "data/prices.csv"
@@ -31,7 +32,9 @@ class PriceHistoryFetcher:
         return stored
 
     def fetch_fresh(self):
+        Utils.log("Start download")
         data = self.download("2019-01-01")
+        Utils.log("Store locally")
         self.store(data)
         return self.fetch_stored()
 
@@ -50,7 +53,7 @@ class PriceHistoryFetcher:
         # if it's not outdated, just return it
         last_date_with_data = self.last_date_with_data(stored)
         if last_date_with_data >= date.today():
-            print("Not updating because we have today's data")
+            Utils.log("Not updating because we have today's data")
             return stored
 
         # else fetch the delta
@@ -59,11 +62,11 @@ class PriceHistoryFetcher:
 
         # insert delta
         updated_rows = stored[stored.index.isin(downloaded.index)]
-        print("Dropping {0} rows".format(updated_rows.shape[0]))
+        Utils.log("Dropping {0} rows".format(updated_rows.shape[0]))
 
         stored.drop(updated_rows.index, inplace=True)
 
-        print("Appending {0} rows".format(downloaded.shape[0]))
+        Utils.log("Appending {0} rows".format(downloaded.shape[0]))
         updated = stored.append(downloaded)
 
         # store updated data
@@ -71,16 +74,20 @@ class PriceHistoryFetcher:
         return self.fetch_stored()
 
 def main():
+    Utils.log('Started fetch_price_history')
     parser = argparse.ArgumentParser()
     parser.add_argument('method', choices=['fresh', 'incremental'])
     args = parser.parse_args()
 
     phf = PriceHistoryFetcher(Watchlist.load())
 
+    Utils.log(f'method = {args.method}')
     if args.method == 'incremental':
         phf.fetch_incremental()
     else:
         phf.fetch_fresh()
+
+    Utils.log("Finished fetch_price_history")
 
 if __name__ == "__main__":
     main()

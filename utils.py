@@ -29,3 +29,6 @@ class Utils:
     
     def dateRangeStr(start_date: date, end_date: date) -> str:
         return f'{Utils.dateToStr(start_date)} to {Utils.dateToStr(end_date)}'
+
+    def log(s: str) -> None:
+        print(f'{datetime.now().strftime("%m/%d, %H:%M:%S")}: {s}')

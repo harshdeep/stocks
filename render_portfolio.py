@@ -84,20 +84,28 @@ class RenderPortfolio:
         self.dest = dest
 
     def timeseries(self, start_date: date, end_date: date):
+        date_range_str = Utils.dateRangeStr(start_date, end_date)
+
+        Utils.log(f'Computing timeseries {date_range_str}')
         (aggregate_perf, final_positions) = self.portfolio.timeSeries(start_date, end_date)
 
         # write local csv files
-        date_range_str = Utils.dateRangeStr(start_date, end_date)
+        Utils.log('Writing CSVs')
         Utils.writeCSVObjects(f'artifacts/Timeseries {date_range_str}.csv', aggregate_perf)
         Utils.writeCSVObjects(f'artifacts/Stocks {date_range_str}.csv', final_positions)
 
+        Utils.log('Rendering Chart')
         chart_filename = self.renderAggregatePerfChart(aggregate_perf, start_date, end_date)
+
+        Utils.log('Generating markdown')
         summaryMarkdown = FinalSummary(final_positions, aggregate_perf, start_date, end_date).markdown()
 
         if self.dest == "console":
             print(summaryMarkdown)
         elif self.dest == "email":
+            Utils.log('Sending email')
             EmailSender.sendMarkdown(f'Investment summary {date_range_str}', summaryMarkdown, [chart_filename])
+            Utils.log('Sent email')
         else:
             raise Exception(f'Unknown dest {self.dest}')
 
@@ -197,7 +205,7 @@ class RenderPortfolio:
         ax1.legend()
         filename = f'artifacts/Plot {Utils.dateRangeStr(start_date, end_date)}.png'
         plt.savefig(filename)
-        print(f'\nWrote {filename}')
+        Utils.log(f'\nWrote {filename}')
         return filename
 
     def stockPriceHistoryToPlot(self, symbol: str, start_date: date, end_date: date, scale_to: float):
@@ -210,11 +218,14 @@ class RenderPortfolio:
         return [multiplier * v for v in series]
 
 def main():
+    Utils.log("Start render_portfolio")
     parser = argparse.ArgumentParser()
     parser.add_argument('period', choices=['week', 'month', 'quarter', 'year', 'ytd', 'test'])
     parser.add_argument('-d', '--dest', choices=['console', 'email'], default='console')
     args = parser.parse_args()
     rp = RenderPortfolio(args.dest)
+
+    Utils.log(args)
 
     period = args.period
     if period == 'week':

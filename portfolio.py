@@ -129,9 +129,11 @@ class Portfolio:
                     non_fb_gain += current_gain
                     non_fb_cost_basis += position.costBasis
 
+            net_non_fb_value = non_fb_value - cumulative_deposit + cumulative_withdrawn
+
             day_non_fb_gain = 0
             if len(aggregate_perf) > 0:
-                day_non_fb_gain = (non_fb_value - aggregate_perf[-1].nonFBValue)/aggregate_perf[-1].nonFBValue
+                day_non_fb_gain = (net_non_fb_value - aggregate_perf[-1].netNonFBValue) / aggregate_perf[-1].netNonFBValue
 
             aggregate_perf.append(AggregatePerfRow(
                 date,
@@ -143,7 +145,7 @@ class Portfolio:
                 non_fb_gain,
                 deposit,
                 withdrawn,
-                non_fb_value - cumulative_deposit + cumulative_withdrawn,
+                net_non_fb_value,
                 day_non_fb_gain
             ))
             date += day
