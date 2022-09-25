@@ -105,7 +105,7 @@ class Portfolio:
                 if trade.action == 'Buy':
                     deposit += trade_value
                     traded_value_by_symbol[symbol]['bought'] += trade_value
-                elif trade.action == 'Sell' and trade.symbol != 'FB':
+                elif trade.action == 'Sell' and trade.symbol != 'META':
                     withdrawn += trade_value
                     traded_value_by_symbol[symbol]['sold'] += trade_value
 
@@ -124,7 +124,7 @@ class Portfolio:
                 value += current_value
                 gain += current_gain
                 cost_basis += position.costBasis
-                if position.symbol != 'FB':
+                if position.symbol != 'META':
                     non_fb_value += current_value
                     non_fb_gain += current_gain
                     non_fb_cost_basis += position.costBasis
